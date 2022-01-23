@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
 import { useStateWithCallbackLazy } from "use-state-with-callback";
 
@@ -33,9 +33,9 @@ function App() {
 
 				// Get the contract instance.
 				const networkId = await web3.eth.net.getId();
-				const deployedNetwork = SimpleStorageContract.networks[networkId];
+				const deployedNetwork = PlagiarismContract.networks[networkId];
 				const instance = new web3.eth.Contract(
-					SimpleStorageContract.abi,
+					PlagiarismContract.abi,
 					deployedNetwork && deployedNetwork.address
 				);
 

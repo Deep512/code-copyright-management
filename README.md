@@ -1,0 +1,1 @@
+# code-copyright-management

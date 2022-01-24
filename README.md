@@ -25,14 +25,14 @@ truffle migrate
 ```
 <br />
 4. Start the preprocessing server on other terminal instance.<br />
-```
+``
 cd server
 node server.js
-```
+``
 <br />
 5. Start the react app on another terminal instance<br />
-```
+``
 cd client
 yarn install && yarn start
-```
+``
 <br />

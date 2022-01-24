@@ -79,7 +79,7 @@ contract PlagiarismContract  {
 
     function checkIfPlagiarised( string [] memory _hashSet)private  returns(bool){
       uint similarityScore = getMaximumSimilarityScore(_hashSet);
-
+      
       uint thresholdSimilarity=0;
       if(similarityScore>thresholdSimilarity)
         return true;
@@ -95,7 +95,7 @@ contract PlagiarismContract  {
         for(uint j=1;j<=existingFilehashSet.length;j++){
           //TODO
           // uint similarity=getSimilarity();
-          similarity=calculateSimilarityScore(existingFilehashSet,hashSet);
+          similarity=calculateSimilarityScore(existingFilehashSet,_hashSet);
           if(similarity>maxSimilarity){
             maxSimilarity=similarity;
           }
@@ -103,33 +103,6 @@ contract PlagiarismContract  {
       }
       return maxSimilarity;
     }
-
-    function testJaccards( string [] memory _hashSet1,string [] memory _hashSet2) public returns (uint){
-      // JaccardsSimilarity js= new JaccardsSimilarity();
-      // uint ans= calculateSimilarityScore(_hashSet1,_hashSet2);
-      // return ans;
-    }
-
-    
-
-// function increase() public {
-//         value += 1;
-//     }
-
-//     function acceptRelayedCall(
-//         address relay,
-//         address from,
-//         bytes calldata encodedFunction,
-//         uint256 transactionFee,
-//         uint256 gasPrice,
-//         uint256 gasLimit,
-//         uint256 nonce,
-//         bytes calldata approvalData,
-//         uint256 maxPossibleCharge
-//     ) external view returns (uint256, bytes memory) {
-//         return _approveRelayedCall();
-//     }
-
 
 function compareStrings(string memory a, string memory b) public pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
@@ -179,7 +152,7 @@ function compareStrings(string memory a, string memory b) public pure returns (b
             }
         } 
 
-        uint commonElementsCount = getCommonElementsCount(list1,list1,setLength1,setLength2);
+        uint commonElementsCount = getCommonElementsCount(list1,list2,setLength1,setLength2);
         uint unionCount=setLength1+setLength2-commonElementsCount;        
         
         return commonElementsCount*100/unionCount;

@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
-import { useStateWithCallbackLazy } from "use-state-with-callback";
 
 import "./App.css";
 
 function App() {
 	const [lang, setLang] = useState(null);
 	const [file, setFile] = useState(null);
-	const [web3, setWeb3] = useStateWithCallbackLazy(null);
-	const [contract, setContract] = useStateWithCallbackLazy(null);
-	const [accounts, setAccounts] = useStateWithCallbackLazy(null);
-	const [storageValue, setStorageValue] = useStateWithCallbackLazy(0);
+	const [web3, setWeb3] = useState(null);
+	const [contract, setContract] = useState(null);
+	const [accounts, setAccounts] = useState(null);
 	const [hashSet, setHashSet] = useState(null);
 	const [codeFingerprint, setCodeFingerprint] = useState(null);
 
@@ -61,14 +59,21 @@ function App() {
 	}, [codeFingerprint]);
 
 	const sendToContract = async () => {
-		// await contract.methods.set(5).send({ from: accounts[0] });
-		console.log(hashSet, codeFingerprint);
+		await contract.methods
+			.uploadFile(
+				256,
+				"uidsfkjdsfkjsd",
+				"jskdfjk.js",
+				"js file",
+				codeFingerprint,
+				["4444"]
+			)
+			.send({ from: accounts[0] });
 
+		var res = await contract.methods.fileCount().call();
+		console.log(res);
 		// Get the value from the contract to prove it worked.
-		const response = await contract.methods.get().call();
-
-		// Update state with the result.
-		setStorageValue(response);
+		// const response = await contract.methods.get().call();
 	};
 
 	var onLangChange = (e) => {
@@ -137,19 +142,6 @@ function App() {
 			<button type="submit" onClick={onSubmit}>
 				Submit
 			</button>
-			<br />
-			<br />
-			{/* <input
-				type="text"
-				value={input}
-				onChange={(e) => onInputChange(e)}
-			></input>
-			<button type="submit" onClick={() => runExample()}>
-				Submit
-			</button>
-			<br />
-			<br />*/}
-			<div>The stored value is: {storageValue}</div>
 		</div>
 	) : (
 		<div>Loading Web3, accounts, and contract...</div>

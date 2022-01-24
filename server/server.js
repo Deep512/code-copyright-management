@@ -14,10 +14,6 @@ app.get("/", (req, res) => {
 
 app.post("/", (req, res) => {
 	const { data, langIndex } = req.body;
-	// console.log(req.body.data);
-	// console.log(req.body.langIndex);
-	// console.log(data);
-	// console.log(langIndex);
 	const obj = printTree(langIndex, data);
 	res.send(obj);
 });

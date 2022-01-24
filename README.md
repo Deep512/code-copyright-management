@@ -12,10 +12,10 @@ A web application that allows users to upload code files for copyright protectio
 
 ## Running Instructions:
 1. Clone the repository<br />
-`git clone https://github.com/Deep512/code-copyright-management`<br />
+`- git clone https://github.com/Deep512/code-copyright-management`<br />
 
 2. Download ganache-cli(if not already installed) and run.<br />
-`ganache-cli`<br />
+`- ganache-cli`<br />
 
 3. Open another terminal to compile and migrate the smart contracts.<br />
 ```
@@ -25,9 +25,9 @@ A web application that allows users to upload code files for copyright protectio
 ```
 
 4. Start the preprocessing server on other terminal instance.<br />
-`cd server`<br />
-`node server.js`<br />
+`- cd server`<br />
+`- node server.js`<br />
 
-5. Start the react app on another terminal instance<br />
-`cd client`<br />
-`yarn install && yarn start`<br />
+5. Start the react app on another terminal instance.<br />
+`- cd client`<br />
+`- yarn install && yarn start`<br />

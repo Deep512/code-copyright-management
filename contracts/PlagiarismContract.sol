@@ -95,6 +95,7 @@ contract PlagiarismContract  {
         for(uint j=1;j<=existingFilehashSet.length;j++){
           //TODO
           // uint similarity=getSimilarity();
+          similarity=calculateSimilarityScore(existingFilehashSet,hashSet);
           if(similarity>maxSimilarity){
             maxSimilarity=similarity;
           }

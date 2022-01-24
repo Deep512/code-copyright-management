@@ -53,7 +53,6 @@ function App() {
 		if (!codeFingerprint) {
 			fetchData();
 		} else {
-			// 	// proceed with an example of interacting with the contract's methods.
 			sendToContract();
 		}
 	}, [codeFingerprint]);
@@ -72,8 +71,6 @@ function App() {
 
 		var res = await contract.methods.fileCount().call();
 		console.log(res);
-		// Get the value from the contract to prove it worked.
-		// const response = await contract.methods.get().call();
 	};
 
 	var onLangChange = (e) => {
@@ -114,10 +111,6 @@ function App() {
 		reader.readAsText(file);
 		console.log("SUBMITTED");
 	};
-
-	// var onInputChange = (e) => {
-	// 	setInput(e.target.value);
-	// };
 
 	return web3 ? (
 		<div className="App">

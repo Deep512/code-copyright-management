@@ -19,20 +19,16 @@ A web application that allows users to upload code files for copyright protectio
 
 3. Open another terminal to compile and migrate the smart contracts.<br />
 ```
-cd code-copyright-management
-truffle compile
-truffle migrate
+- cd code-copyright-management
+- truffle compile
+- truffle migrate
 ```
 <br />
 4. Start the preprocessing server on other terminal instance.<br />
-<code>
-cd server<br />
-node server.js
-</code>
+`cd server`<br />
+`node server.js`
 <br />
 5. Start the react app on another terminal instance<br />
-<code>
-cd client<br />
-yarn install && yarn start
-</code>
+`cd client`<br />
+`yarn install && yarn start`
 <br />

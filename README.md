@@ -23,7 +23,7 @@ A web application that allows users to upload code files for copyright protectio
 - truffle compile
 - truffle migrate
 ```
-<br /><br />
+<br />
 4. Start the preprocessing server on other terminal instance.<br />
 `cd server`<br />
 `node server.js`<br />

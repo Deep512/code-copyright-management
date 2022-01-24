@@ -25,8 +25,10 @@ A web application that allows users to upload code files for copyright protectio
 ```
 
 4. Start the preprocessing server on other terminal instance.<br />
-`- cd server`<br />
-`- node server.js`<br />
+```
+- cd server
+- node server.js
+```
 
 5. Start the react app on another terminal instance.<br />
 `- cd client`<br />

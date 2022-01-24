@@ -34,7 +34,8 @@ node server.js
 ```
 <br />
 5. Start the react app on another terminal instance<br />
-```cd client
+```
+cd client
 yarn install && yarn start
 ```
 <br />

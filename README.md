@@ -24,9 +24,11 @@ A web application that allows users to upload code files for copyright protectio
 - truffle migrate
 ```
 <br />
+
 4. Start the preprocessing server on other terminal instance.<br />
 `cd server`<br />
 `node server.js`<br />
+
 5. Start the react app on another terminal instance<br />
 `cd client`<br />
 `yarn install && yarn start`<br />

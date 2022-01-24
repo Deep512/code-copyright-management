@@ -17,9 +17,7 @@ git clone https://github.com/Deep512/code-copyright-management
 ```
 <br />
 2. Download ganache-cli(if not already installed) and run.<br />
-```
-ganache-cli
-```
+`ganache-cli`
 <br />
 3. Open another terminal to compile and migrate the smart contracts.<br />
 ```
@@ -29,7 +27,8 @@ truffle migrate
 ```
 <br />
 4. Start the preprocessing server on other terminal instance.<br />
-```cd server
+```
+cd server
 node server.js
 ```
 <br />

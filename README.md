@@ -31,5 +31,8 @@ A web application that allows users to upload code files for copyright protectio
 ```
 
 5. Start the react app on another terminal instance.<br />
-`- cd client`<br />
-`- yarn install && yarn start`<br />
+```
+- cd client
+- yarn install && yarn start
+```
+<br />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
-
+import ipfs from "./ipfs";
 import "./App.css";
 
 function App() {
@@ -12,13 +12,19 @@ function App() {
 	const [accounts, setAccounts] = useState(null);
 	const [hashSet, setHashSet] = useState(null);
 	const [codeFingerprint, setCodeFingerprint] = useState(null);
-
+	const [buffer, setBuffer] = useState(null);
+	const [ipfsHash, setIpfsHash] = useState("");
+	const [data, setData] = useState("");
 	const langIndexes = {
 		java: 0,
 		python: 1,
 		cpp: 2,
 		js: 3,
 	};
+
+	useEffect(() => {
+		getData();
+	}, [ipfsHash]);
 
 	useEffect(() => {
 		async function fetchData() {
@@ -59,14 +65,7 @@ function App() {
 
 	const sendToContract = async () => {
 		await contract.methods
-			.uploadFile(
-				256,
-				"uidsfkjdsfkjsd",
-				"jskdfjk.js",
-				"js file",
-				codeFingerprint,
-				["4444"]
-			)
+			.uploadFile(file.size, ipfsHash, file.name, "", codeFingerprint, hashSet)
 			.send({ from: accounts[0] });
 
 		var res = await contract.methods.fileCount().call();
@@ -79,37 +78,60 @@ function App() {
 
 	var onFileChange = async (e) => {
 		setFile(e.target.files[0]);
+		const reader = new FileReader();
+		reader.readAsArrayBuffer(e.target.files[0]);
+		reader.onloadend = () => {
+			setBuffer(Buffer(reader.result));
+			console.log("buffer", reader.result);
+		};
 	};
 
-	var onSubmit = () => {
+	var onSubmit = async (e) => {
+		e.preventDefault();
 		if (!file || !lang || lang === "Select") {
 			console.log("Please choose a language and upload the file properly");
 			return;
 		}
-		let text;
-		const reader = new FileReader();
-		reader.onload = async (e) => {
-			text = e.target.result;
-			console.log(text);
-			const langIndex = langIndexes[lang];
-			fetch("http://localhost:8000", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					data: text,
-					langIndex: langIndex,
-				}),
-			})
-				.then((res) => res.json())
-				.then((data) => {
-					setHashSet(data["hashSet"]);
-					setCodeFingerprint(data["codeFingerprint"]);
-				});
-		};
-		reader.readAsText(file);
-		console.log("SUBMITTED");
+		ipfs.add(buffer).then((res) => {
+			setIpfsHash(res["path"]);
+			console.log(res["path"]);
+			const reader = new FileReader();
+			reader.onload = async (e) => {
+				let text = e.target.result;
+				const langIndex = langIndexes[lang];
+				fetch("http://localhost:8000", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						data: text,
+						langIndex: langIndex,
+					}),
+				})
+					.then((res) => res.json())
+					.then((data) => {
+						setHashSet(data["hashSet"]);
+						setCodeFingerprint(data["codeFingerprint"]);
+					});
+			};
+			reader.readAsText(file);
+			console.log("SUBMITTED");
+		});
+	};
+
+	const getData = async () => {
+		if (ipfsHash !== "") {
+			const stream = ipfs.cat(ipfsHash);
+			let data = "";
+
+			for await (const chunk of stream) {
+				// chunks of data are returned as a Buffer, convert it back to a string
+				for (const x of chunk) data += String.fromCharCode(x);
+			}
+
+			setData(data);
+		}
 	};
 
 	return web3 ? (
@@ -135,6 +157,7 @@ function App() {
 			<button type="submit" onClick={onSubmit}>
 				Submit
 			</button>
+			<p>{data}</p>
 		</div>
 	) : (
 		<div>Loading Web3, accounts, and contract...</div>

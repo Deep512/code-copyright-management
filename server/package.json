@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "npm test"
+    "test": "npm test",
+    "dev":"nodemon server.js"
   },
   "author": "Deep Dhanuka & Harshvardhan",
   "license": "ISC",
@@ -19,5 +20,8 @@
     "jaccard-index": "^0.2.0",
     "jaccard-similarity-sentences": "^1.0.2",
     "n-gram": "^2.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
   }
 }

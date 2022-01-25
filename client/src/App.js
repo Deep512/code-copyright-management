@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
-import { useStateWithCallbackLazy } from "use-state-with-callback";
-
+import ipfs from "./ipfs";
 import "./App.css";
 
 function App() {
 	const [lang, setLang] = useState(null);
 	const [file, setFile] = useState(null);
-	const [web3, setWeb3] = useStateWithCallbackLazy(null);
-	const [contract, setContract] = useStateWithCallbackLazy(null);
-	const [accounts, setAccounts] = useStateWithCallbackLazy(null);
-	const [storageValue, setStorageValue] = useStateWithCallbackLazy(0);
+	const [web3, setWeb3] = useState(null);
+	const [contract, setContract] = useState(null);
+	const [accounts, setAccounts] = useState(null);
 	const [hashSet, setHashSet] = useState(null);
 	const [codeFingerprint, setCodeFingerprint] = useState(null);
-
+	const [buffer, setBuffer] = useState(null);
+	const [ipfsHash, setIpfsHash] = useState("");
+	const [data, setData] = useState("");
 	const langIndexes = {
 		java: 0,
 		python: 1,
 		cpp: 2,
 		js: 3,
 	};
+
+	useEffect(() => {
+		getData();
+	}, [ipfsHash]);
 
 	useEffect(() => {
 		async function fetchData() {
@@ -33,9 +37,9 @@ function App() {
 
 				// Get the contract instance.
 				const networkId = await web3.eth.net.getId();
-				const deployedNetwork = SimpleStorageContract.networks[networkId];
+				const deployedNetwork = PlagiarismContract.networks[networkId];
 				const instance = new web3.eth.Contract(
-					SimpleStorageContract.abi,
+					PlagiarismContract.abi,
 					deployedNetwork && deployedNetwork.address
 				);
 
@@ -55,20 +59,17 @@ function App() {
 		if (!codeFingerprint) {
 			fetchData();
 		} else {
-			// 	// proceed with an example of interacting with the contract's methods.
 			sendToContract();
 		}
 	}, [codeFingerprint]);
 
 	const sendToContract = async () => {
-		// await contract.methods.set(5).send({ from: accounts[0] });
-		console.log(hashSet, codeFingerprint);
+		await contract.methods
+			.uploadFile(file.size, ipfsHash, file.name, "", codeFingerprint, hashSet)
+			.send({ from: accounts[0] });
 
-		// Get the value from the contract to prove it worked.
-		const response = await contract.methods.get().call();
-
-		// Update state with the result.
-		setStorageValue(response);
+		var res = await contract.methods.fileCount().call();
+		console.log(res);
 	};
 
 	var onLangChange = (e) => {
@@ -77,42 +78,61 @@ function App() {
 
 	var onFileChange = async (e) => {
 		setFile(e.target.files[0]);
+		const reader = new FileReader();
+		reader.readAsArrayBuffer(e.target.files[0]);
+		reader.onloadend = () => {
+			setBuffer(Buffer(reader.result));
+			console.log("buffer", reader.result);
+		};
 	};
 
-	var onSubmit = () => {
+	var onSubmit = async (e) => {
+		e.preventDefault();
 		if (!file || !lang || lang === "Select") {
 			console.log("Please choose a language and upload the file properly");
 			return;
 		}
-		let text;
-		const reader = new FileReader();
-		reader.onload = async (e) => {
-			text = e.target.result;
-			console.log(text);
-			const langIndex = langIndexes[lang];
-			fetch("http://localhost:8000", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					data: text,
-					langIndex: langIndex,
-				}),
-			})
-				.then((res) => res.json())
-				.then((data) => {
-					setHashSet(data["hashSet"]);
-					setCodeFingerprint(data["codeFingerprint"]);
-				});
-		};
-		reader.readAsText(file);
-		console.log("SUBMITTED");
+		ipfs.add(buffer).then((res) => {
+			setIpfsHash(res["path"]);
+			console.log(res["path"]);
+			const reader = new FileReader();
+			reader.onload = async (e) => {
+				let text = e.target.result;
+				const langIndex = langIndexes[lang];
+				fetch("http://localhost:8000", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						data: text,
+						langIndex: langIndex,
+					}),
+				})
+					.then((res) => res.json())
+					.then((data) => {
+						setHashSet(data["hashSet"]);
+						setCodeFingerprint(data["codeFingerprint"]);
+					});
+			};
+			reader.readAsText(file);
+			console.log("SUBMITTED");
+		});
 	};
 
-	// var onInputChange = (e) => {
-	// 	setInput(e.target.value);
-	// };
+	const getData = async () => {
+		if (ipfsHash !== "") {
+			const stream = ipfs.cat(ipfsHash);
+			let data = "";
+
+			for await (const chunk of stream) {
+				// chunks of data are returned as a Buffer, convert it back to a string
+				for (const x of chunk) data += String.fromCharCode(x);
+			}
+
+			setData(data);
+		}
+	};
 
 	return web3 ? (
 		<div className="App">
@@ -137,19 +157,7 @@ function App() {
 			<button type="submit" onClick={onSubmit}>
 				Submit
 			</button>
-			<br />
-			<br />
-			{/* <input
-				type="text"
-				value={input}
-				onChange={(e) => onInputChange(e)}
-			></input>
-			<button type="submit" onClick={() => runExample()}>
-				Submit
-			</button>
-			<br />
-			<br />*/}
-			<div>The stored value is: {storageValue}</div>
+			<p>{data}</p>
 		</div>
 	) : (
 		<div>Loading Web3, accounts, and contract...</div>

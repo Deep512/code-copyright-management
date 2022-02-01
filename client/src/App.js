@@ -65,11 +65,15 @@ function App() {
 
 	const sendToContract = async () => {
 		await contract.methods
-			.uploadFile(file.size, ipfsHash, file.name, "", codeFingerprint, hashSet)
+			.uploadFile(
+				file.size,
+				ipfsHash,
+				file.name,
+				"some desc",
+				codeFingerprint,
+				hashSet //Replace it with hashset
+			)
 			.send({ from: accounts[0] });
-
-		var res = await contract.methods.fileCount().call();
-		console.log(res);
 	};
 
 	var onLangChange = (e) => {
@@ -94,7 +98,7 @@ function App() {
 		}
 		ipfs.add(buffer).then((res) => {
 			setIpfsHash(res["path"]);
-			console.log(res["path"]);
+			console.log("IPFS Hash", res["path"]);
 			const reader = new FileReader();
 			reader.onload = async (e) => {
 				let text = e.target.result;
@@ -136,7 +140,7 @@ function App() {
 
 	return web3 ? (
 		<div className="App">
-			<header>Code Copyright and Code Plagiarism Detection</header>
+			<header>Code Copyright Management and Code Plagiarism Detection</header>
 			<br />
 			<label htmlFor="language">Select the language</label>
 			<select name="language" id="language" onChange={(e) => onLangChange(e)}>

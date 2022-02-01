@@ -65,7 +65,14 @@ function App() {
 
 	const sendToContract = async () => {
 		await contract.methods
-			.uploadFile(file.size, ipfsHash, file.name, "", codeFingerprint, hashSet)
+			.uploadFile(
+				file.size,
+				ipfsHash,
+				file.name,
+				"some desc",
+				codeFingerprint,
+				hashSet
+			)
 			.send({ from: accounts[0] });
 
 		var res = await contract.methods.fileCount().call();

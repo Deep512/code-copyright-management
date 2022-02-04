@@ -3,17 +3,18 @@ pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 // import "./usingOraclize.sol";
 // import "./provableAPI.sol";
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+// import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 // import "@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol";
 
 
-contract PlagiarismContract is ChainlinkClient {
+// contract PlagiarismContract is ChainlinkClient {
+contract PlagiarismContract{
 
-  using Chainlink for Chainlink.Request;
+  // using Chainlink for Chainlink.Request;
 
-  address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
+  // address private oracle;
+  //   bytes32 private jobId;
+  //   uint256 private fee;
 
   struct CodeFile{
     uint fileId;
@@ -47,13 +48,13 @@ contract PlagiarismContract is ChainlinkClient {
     bool plagiarisedResult
   );
 
-  event LogNewProvableQuery(string _res);
+  // event LogNewProvableQuery(string _res);
 
   constructor() {
-    setPublicChainlinkToken();
-        oracle = 0x19f7f3bF88CB208B0C422CC2b8E2bd23ee461DD1;
-        jobId = "9b32442f55d74362b26c608c6e9bb80c";
-        fee = 0.0001 * 10 ** 18; // (Varies by network and job)
+    // setPublicChainlinkToken();
+    //     oracle = 0x19f7f3bF88CB208B0C422CC2b8E2bd23ee461DD1;
+    //     jobId = "9b32442f55d74362b26c608c6e9bb80c";
+    //     fee = 0.0001 * 10 ** 18; // (Varies by network and job)
   }
 
   // function TestOraclizeCall() { 
@@ -68,36 +69,36 @@ contract PlagiarismContract is ChainlinkClient {
   //   oraclize_query("URL","json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD).USD");
   // }
 
-  uint256 public volume;
-  function Test() public returns (bytes32 requestId){
-    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
+  // uint256 public volume;
+  // function Test() public returns (bytes32 requestId){
+  //   Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
         
-        // Set the URL to perform the GET request on
-        request.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
+  //       // Set the URL to perform the GET request on
+  //       request.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
         
-        // Set the path to find the desired data in the API response, where the response format is:
-        // {"RAW":
-        //   {"ETH":
-        //    {"USD":
-        //     {
-        //      "VOLUME24HOUR": xxx.xxx,
-        //     }
-        //    }
-        //   }
-        //  }
-        request.add("path", "RAW.ETH.USD.VOLUME24HOUR");
+  //       // Set the path to find the desired data in the API response, where the response format is:
+  //       // {"RAW":
+  //       //   {"ETH":
+  //       //    {"USD":
+  //       //     {
+  //       //      "VOLUME24HOUR": xxx.xxx,
+  //       //     }
+  //       //    }
+  //       //   }
+  //       //  }
+  //       request.add("path", "RAW.ETH.USD.VOLUME24HOUR");
         
-        // Multiply the result by 1000000000000000000 to remove decimals
-        int timesAmount = 10**18;
-        request.addInt("times", timesAmount);
+  //       // Multiply the result by 1000000000000000000 to remove decimals
+  //       int timesAmount = 10**18;
+  //       request.addInt("times", timesAmount);
         
-        // Sends the request
-        return sendChainlinkRequestTo(oracle, request, fee);
-  }
-  function fulfill(bytes32 _requestId, uint256 _volume) public recordChainlinkFulfillment(_requestId)
-    {
-        volume = _volume;
-    }
+  //       // Sends the request
+  //       return sendChainlinkRequestTo(oracle, request, fee);
+  // }
+  // function fulfill(bytes32 _requestId, uint256 _volume) public recordChainlinkFulfillment(_requestId)
+  //   {
+  //       volume = _volume;
+  //   }
 
   function uploadFile(uint _fileSize, string memory _fileIPFSHash, string memory _fileName,string memory _fileDescription, string memory _codeFingerPrint, string [] memory _hashSet) public {
     require(bytes(_fileIPFSHash).length > 0, "CodeFile Hash is empty");

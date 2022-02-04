@@ -64,16 +64,16 @@ function App() {
 	}, [codeFingerprint]);
 
 	const sendToContract = async () => {
-		await contract.methods
-			.uploadFile(
-				file.size,
-				ipfsHash,
-				file.name,
-				"some desc",
-				codeFingerprint,
-				hashSet
-			)
-			.send({ from: accounts[0] });
+		// await contract.methods
+		// 	.uploadFile(
+		// 		file.size,
+		// 		ipfsHash,
+		// 		file.name,
+		// 		"some desc",
+		// 		codeFingerprint,
+		// 		[codeFingerprint]
+		// 	)
+		// 	.send({ from: accounts[0] });
 
 		var res = await contract.methods.fileCount().call();
 		console.log(res);
@@ -120,6 +120,17 @@ function App() {
 					.then((data) => {
 						setHashSet(data["hashSet"]);
 						setCodeFingerprint(data["codeFingerprint"]);
+						// fetch("http://localhost:8000/hashset", {
+						// 	method: "POST",
+						// 	headers: {
+						// 		"Content-Type": "application/json",
+						// 	},
+						// 	body: JSON.stringify({
+						// 		codeFingerprint: data["codeFingerprint"],
+						// 	}),
+						// })
+						// 	.then((res) => res.json())
+						// 	.then((data) => console.log(data));
 					});
 			};
 			reader.readAsText(file);

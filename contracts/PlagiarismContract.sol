@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
-
+// import "./usingOraclize.sol";
+// import "./provableAPI.sol";
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 // import "@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol";
 
 
-contract PlagiarismContract  {
+contract PlagiarismContract is ChainlinkClient {
+
+  using Chainlink for Chainlink.Request;
+
+  address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
 
   struct CodeFile{
     uint fileId;
@@ -38,8 +46,58 @@ contract PlagiarismContract  {
   event PlagiarismResult(
     bool plagiarisedResult
   );
-  constructor() public {
+
+  event LogNewProvableQuery(string _res);
+
+  constructor() {
+    setPublicChainlinkToken();
+        oracle = 0x19f7f3bF88CB208B0C422CC2b8E2bd23ee461DD1;
+        jobId = "9b32442f55d74362b26c608c6e9bb80c";
+        fee = 0.0001 * 10 ** 18; // (Varies by network and job)
   }
+
+  // function TestOraclizeCall() { 
+  //   OAR= OraclizeAddrResolverI(0x71d61a4c458d43f6834da6217e7fd00e3101421f);
+  // }
+  // function __callback(bytes32 _myid, string _result) {
+  //   require (msg.sender == oraclize_cbAddress());
+  //   Log(_result);
+  //   price = parseInt(_result, 2);
+  // }
+  // function update() payable {
+  //   oraclize_query("URL","json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD).USD");
+  // }
+
+  uint256 public volume;
+  function Test() public returns (bytes32 requestId){
+    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
+        
+        // Set the URL to perform the GET request on
+        request.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
+        
+        // Set the path to find the desired data in the API response, where the response format is:
+        // {"RAW":
+        //   {"ETH":
+        //    {"USD":
+        //     {
+        //      "VOLUME24HOUR": xxx.xxx,
+        //     }
+        //    }
+        //   }
+        //  }
+        request.add("path", "RAW.ETH.USD.VOLUME24HOUR");
+        
+        // Multiply the result by 1000000000000000000 to remove decimals
+        int timesAmount = 10**18;
+        request.addInt("times", timesAmount);
+        
+        // Sends the request
+        return sendChainlinkRequestTo(oracle, request, fee);
+  }
+  function fulfill(bytes32 _requestId, uint256 _volume) public recordChainlinkFulfillment(_requestId)
+    {
+        volume = _volume;
+    }
 
   function uploadFile(uint _fileSize, string memory _fileIPFSHash, string memory _fileName,string memory _fileDescription, string memory _codeFingerPrint, string [] memory _hashSet) public {
     require(bytes(_fileIPFSHash).length > 0, "CodeFile Hash is empty");
@@ -49,6 +107,14 @@ contract PlagiarismContract  {
     require(bytes(_fileName).length > 0, "CodeFile name is empty");
 
     require(_fileSize>0, "CodeFile size is 0");
+
+    // if (provable_getPrice("computation") > address(this).balance) {
+    //   emit LogNewProvableQuery("Provable query was NOT sent, please add some ETH to cover for the query fee");
+    // } else {
+      // emit LogNewProvableQuery("Provable query was sent, standing by for the answer…");
+      // provable_query("URL", "json(http://localhost:8000/hashset)",'{"codeFingerprint":_codeFingerPrint}');
+      // emit LogNewProvableQuery(m);
+    // }
 
     if(checkIfPlagiarised(_hashSet)){
       emit PlagiarismResult(true);
@@ -77,7 +143,7 @@ contract PlagiarismContract  {
         return filesMap[_fileIndex].hashSet;
     }
 
-    function checkIfPlagiarised( string [] memory _hashSet)private  returns(bool){
+    function checkIfPlagiarised( string [] memory _hashSet)private view returns(bool){
       uint similarityScore = getMaximumSimilarityScore(_hashSet);
       
       uint thresholdSimilarity=0;

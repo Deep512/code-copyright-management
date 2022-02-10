@@ -27,7 +27,7 @@ A web application that allows users to upload code files for copyright protectio
 4. Start the preprocessing server on other terminal instance.<br />
 ```
 - cd server
-- node server.js
+- yarn run dev
 ```
 
 5. Start the react app on another terminal instance.<br />

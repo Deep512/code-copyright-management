@@ -3,6 +3,7 @@ import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
 import ipfs from "./ipfs";
 import "./App.css";
+import DragDrop from "./components/DragDrop";
 
 function App() {
 	const [lang, setLang] = useState(null);
@@ -63,17 +64,27 @@ function App() {
 		}
 	}, [codeFingerprint]);
 
+	const setSelectedFile = (selectedFile) => {
+		setFile(selectedFile);
+		const reader = new FileReader();
+		reader.readAsArrayBuffer(selectedFile);
+		reader.onloadend = () => {
+			setBuffer(Buffer(reader.result));
+			console.log("buffer", reader.result);
+		};
+	};
+
 	const sendToContract = async () => {
-		// await contract.methods
-		// 	.uploadFile(
-		// 		file.size,
-		// 		ipfsHash,
-		// 		file.name,
-		// 		"some desc",
-		// 		codeFingerprint,
-		// 		[codeFingerprint]
-		// 	)
-		// 	.send({ from: accounts[0] });
+		await contract.methods
+			.uploadFile(
+				file.size,
+				ipfsHash,
+				file.name,
+				"some desc",
+				codeFingerprint,
+				hashSet
+			)
+			.send({ from: accounts[0] });
 
 		var res = await contract.methods.fileCount().call();
 		console.log(res);
@@ -83,15 +94,15 @@ function App() {
 		setLang(e.target.value);
 	};
 
-	var onFileChange = async (e) => {
-		setFile(e.target.files[0]);
-		const reader = new FileReader();
-		reader.readAsArrayBuffer(e.target.files[0]);
-		reader.onloadend = () => {
-			setBuffer(Buffer(reader.result));
-			console.log("buffer", reader.result);
-		};
-	};
+	// var onFileChange = async (e) => {
+	// 	setFile(e.target.files[0]);
+	// 	const reader = new FileReader();
+	// 	reader.readAsArrayBuffer(e.target.files[0]);
+	// 	reader.onloadend = () => {
+	// 		setBuffer(Buffer(reader.result));
+	// 		console.log("buffer", reader.result);
+	// 	};
+	// };
 
 	var onSubmit = async (e) => {
 		e.preventDefault();
@@ -120,17 +131,6 @@ function App() {
 					.then((data) => {
 						setHashSet(data["hashSet"]);
 						setCodeFingerprint(data["codeFingerprint"]);
-						// fetch("http://localhost:8000/hashset", {
-						// 	method: "POST",
-						// 	headers: {
-						// 		"Content-Type": "application/json",
-						// 	},
-						// 	body: JSON.stringify({
-						// 		codeFingerprint: data["codeFingerprint"],
-						// 	}),
-						// })
-						// 	.then((res) => res.json())
-						// 	.then((data) => console.log(data));
 					});
 			};
 			reader.readAsText(file);
@@ -156,6 +156,9 @@ function App() {
 		<div className="App">
 			<header>Code Copyright and Code Plagiarism Detection</header>
 			<br />
+			<DragDrop setSelectedFile={setSelectedFile} />
+			<br />
+			<br />
 			<label htmlFor="language">Select the language</label>
 			<select name="language" id="language" onChange={(e) => onLangChange(e)}>
 				<option value="Select">Select</option>
@@ -164,13 +167,6 @@ function App() {
 				<option value="java">JAVA</option>
 				<option value="python">Python</option>
 			</select>
-			<br />
-			<label htmlFor="codeFile">Upload the Code File here: </label>
-			<input
-				type="file"
-				className="codeFileInput"
-				onChange={(e) => onFileChange(e)}
-			></input>
 			<br />
 			<button type="submit" onClick={onSubmit}>
 				Submit

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
-
 // import "@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol";
 
 
-contract PlagiarismContract  {
+contract PlagiarismContract{
+
 
   struct CodeFile{
     uint fileId;
@@ -38,9 +38,10 @@ contract PlagiarismContract  {
   event PlagiarismResult(
     bool plagiarisedResult
   );
-  constructor() public {
-  }
 
+
+  constructor() {
+  }
   function uploadFile(uint _fileSize, string memory _fileIPFSHash, string memory _fileName,string memory _fileDescription, string memory _codeFingerPrint, string [] memory _hashSet) public {
     require(bytes(_fileIPFSHash).length > 0, "CodeFile Hash is empty");
 
@@ -77,7 +78,7 @@ contract PlagiarismContract  {
         return filesMap[_fileIndex].hashSet;
     }
 
-    function checkIfPlagiarised( string [] memory _hashSet)private  returns(bool){
+    function checkIfPlagiarised( string [] memory _hashSet)private view returns(bool){
       uint similarityScore = getMaximumSimilarityScore(_hashSet);
       
       uint thresholdSimilarity=0;

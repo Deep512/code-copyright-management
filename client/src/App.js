@@ -151,12 +151,15 @@ function App() {
 
 	return web3 ? (
 		<div className="App">
-			<header>Code Copyright Management and Code Plagiarism Detection</header>
+			<header style={{ fontWeight: "bold", fontSize: "large" }}>
+				Code Copyright Management and Code Plagiarism Detection
+			</header>
 			<br />
 			<DragDrop setSelectedFile={setSelectedFile} />
 			<br />
-			<br />
-			<label htmlFor="language">Select the language</label>
+			<label htmlFor="language" style={{ fontWeight: "bold" }}>
+				Select the language:{" "}
+			</label>
 			<select name="language" id="language" onChange={(e) => onLangChange(e)}>
 				<option value="Select">Select</option>
 				<option value="js">Javascript</option>
@@ -164,6 +167,7 @@ function App() {
 				<option value="java">JAVA</option>
 				<option value="python">Python</option>
 			</select>
+			<br />
 			<br />
 			<button type="submit" onClick={onSubmit}>
 				Submit

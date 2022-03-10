@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import PlagiarismContract from "./contracts/PlagiarismContract.json";
+import TestGas from "./contracts/TestGas.json";
 import getWeb3 from "./getWeb3";
 import ipfs from "./ipfs";
 import "./App.css";
@@ -38,9 +38,9 @@ function App() {
 
 				// Get the contract instance.
 				const networkId = await web3.eth.net.getId();
-				const deployedNetwork = PlagiarismContract.networks[networkId];
+				const deployedNetwork = TestGas.networks[networkId];
 				const instance = new web3.eth.Contract(
-					PlagiarismContract.abi,
+					TestGas.abi,
 					deployedNetwork && deployedNetwork.address
 				);
 
@@ -75,6 +75,16 @@ function App() {
 	};
 
 	const sendToContract = async () => {
+		var newHashSet = Array();
+		var len = 0;
+		const mySet1 = new Set();
+		for (var i = 0; i < hashSet.length; i++) {
+			if (!mySet1.has(hashSet[i])) {
+				mySet1.add(hashSet[i]);
+				newHashSet.push("0x" + hashSet[i]);
+				len++;
+			}
+		}
 		await contract.methods
 			.uploadFile(
 				file.size,
@@ -82,9 +92,12 @@ function App() {
 				file.name,
 				"some desc",
 				codeFingerprint,
-				hashSet
+				newHashSet,
+				len
 			)
 			.send({ from: accounts[0] });
+		let fc = await contract.methods.fileCount().call();
+		console.log(fc);
 	};
 
 	var onLangChange = (e) => {

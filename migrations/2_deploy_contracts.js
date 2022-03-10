@@ -1,5 +1,5 @@
-var PlagiarismContract = artifacts.require("./PlagiarismContract.sol");
+var TestGas = artifacts.require("./TestGas.sol");
 
 module.exports = function (deployer) {
-	deployer.deploy(PlagiarismContract);
+	deployer.deploy(TestGas);
 };

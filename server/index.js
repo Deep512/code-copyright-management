@@ -127,7 +127,7 @@ function printTree(languageIndex, input) {
 	// console.log("Rule names : \n", visitorObject.getRuleNames());
 
 	//Define n
-	var n = 20;
+	var n = 4;
 
 	//Get N-Grams
 	var nArr = getNGrams(ruleNamesIndices, n);

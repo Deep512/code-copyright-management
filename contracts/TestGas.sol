@@ -99,7 +99,7 @@ contract TestGas// is BaseRelayRecipient
     function checkIfPlagiarised( bytes16 [] memory _hashSet, uint hashSetLength)public view returns(bool){
       uint similarityScore = getMaximumSimilarityScore(_hashSet,hashSetLength);
 
-      uint thresholdSimilarity=100;
+      uint thresholdSimilarity=20;
       if(similarityScore>thresholdSimilarity)
         return true;
       else

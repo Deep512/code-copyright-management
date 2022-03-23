@@ -29,6 +29,7 @@ A web application that allows users to upload code files for copyright protectio
 5. Start the preprocessing server on other terminal instance.<br />
 ```
 - cd server
+- yarn install
 - yarn run dev
 ```
 

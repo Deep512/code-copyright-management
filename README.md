@@ -1,4 +1,4 @@
-# Blockchain Based Code Copyright Management System
+# Blockchain Based Code Plagiarism Detection and Code Copyright Management System
 A web application that allows users to upload code files for copyright protection.<br />
 
 ## Tools and Technologies Used:

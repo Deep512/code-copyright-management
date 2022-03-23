@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FileUploader } from "react-drag-drop-files";
 
-const fileTypes = ["JS", "CPP", "JAVA", "PY"];
-
+const fileTypes = ["JS", "CPP", "JAVA"];
 function DragDrop({ setSelectedFile }) {
 	const [file, setFile] = useState(null);
-	const [files, setFiles] = useState([]);
-	useEffect(() => {
-		if (!file) return;
-		var listFiles = files;
-		listFiles = [...listFiles, file];
-		setFiles(listFiles);
-	}, [file]);
 	const handleChange = (file) => {
 		setFile(file);
 		setSelectedFile(file);
@@ -20,14 +12,25 @@ function DragDrop({ setSelectedFile }) {
 		<div
 			style={{
 				display: "flex",
-				flexDirection: "column",
+				flexDirection: "row",
 				alignItems: "center",
+				justifyContent: "space-around",
 			}}
 		>
 			<FileUploader handleChange={handleChange} name="file" types={fileTypes} />
-			{files.map((file, idx) => {
-				return <p key={idx}>{file.name}</p>;
-			})}
+			{file && (
+				<p
+					style={{
+						backgroundColor: "#2c3e50",
+						width: "250px",
+						justifyContent: "center",
+						height: "70px",
+						lineHeight: "70px",
+					}}
+				>
+					{file.name}
+				</p>
+			)}
 		</div>
 	);
 }

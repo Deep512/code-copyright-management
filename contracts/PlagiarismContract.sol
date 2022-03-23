@@ -1,119 +1,218 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
-pragma experimental ABIEncoderV2;
-// import "@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol";
 
 
-contract PlagiarismContract{
 
+
+contract PlagiarismContract 
+{
+/**
+languages
+0: CPP
+1: Java
+2: JavaScript
+ */
 
   struct CodeFile{
     uint fileId;
     uint fileSize;
-    string fileIPFSHash;
+    string fileIPFSCID;
     string fileName;
     string fileDescription;
     address codeAuthor;
     uint timeUploaded;    
     string codeFingerPrint;
-    string [] hashSet;
+    bytes16 [] hashSet;
+    uint hashSetLength;
+    uint language;
   }
+  uint[] public fileCountByLanguage = [0,0,0];
+  uint public totalFileCount=0;
 
-  uint public fileCount = 0;
-  mapping(uint=>CodeFile) public filesMap;
+
+  //TODO: Use actual threshold
+  uint[] public threshold=[30,30,30];
+
+
+  mapping(uint=>mapping(uint=>CodeFile)) public filesMapByLanguage;
+
+  mapping(address=>mapping(uint=>uint[])) public userFilesIndexByLanguage;
+
+  mapping(string=>bool)IPFSCIDsMap;
+
+  event CodeSubmitted(
+    uint timeUploaded ,
+    string fileName,
+    uint language
+  ) ;
 
 
   event CodeFileUploadEvent(
     uint fileId,
     uint fileSize,
-    string fileIPFSHash,
+    string fileIPFSCID,
     string fileName,
     string fileDescription,
     address codeAuthor,
     uint timeUploaded ,
     string codeFingerPrint,
-    string [] hashSet
+    bytes16 [] hashSet,
+    uint hashSetLength,
+    uint language
   ) ;
 
-  event PlagiarismResult(
-    bool plagiarisedResult
+  event GetFilesEvent(
+    CodeFile[] codefiles
   );
 
+  event PlagiarismResult(
+    bool plagiarisedResult,
+    uint timeUploaded
+  );
 
-  constructor() {
-  }
-  function uploadFile(uint _fileSize, string memory _fileIPFSHash, string memory _fileName,string memory _fileDescription, string memory _codeFingerPrint, string [] memory _hashSet) public {
-    require(bytes(_fileIPFSHash).length > 0, "CodeFile Hash is empty");
+   event CheckingPlagiarism(
+  
+    uint timeUploaded,
+  string fileName,
+    uint language
+  );
 
-    require(bytes(_fileDescription).length > 0, "CodeFile description is empty");
+  mapping(string=>mapping(address=>bool)) public hasPermissionsMap;
 
-    require(bytes(_fileName).length > 0, "CodeFile name is empty");
-
-    require(_fileSize>0, "CodeFile size is 0");
-
-    if(checkIfPlagiarised(_hashSet)){
-      emit PlagiarismResult(true);
+    function doesUserHavePermission(string memory cid, address userAddress)
+        public
+        view
+        returns (bool)
+    {
+        return hasPermissionsMap[cid][userAddress];
     }
-    else{
-      fileCount++;
 
-      filesMap[fileCount] = CodeFile(fileCount,_fileSize,_fileIPFSHash, _fileName, _fileDescription,msg.sender,block.timestamp,_codeFingerPrint,_hashSet);
+    function addPermission(string memory cid)
+        public
+    {
+        hasPermissionsMap[cid][msg.sender]=true;
+    }
 
-      emit CodeFileUploadEvent(fileCount,_fileSize,_fileIPFSHash, _fileName, _fileDescription,msg.sender,block.timestamp,_codeFingerPrint,_hashSet);
+    function removePermission(string memory cid)
+        public
+    {
+        hasPermissionsMap[cid][msg.sender]=false;
+    }
+
+//getUploaded files
+// different maps for different langiages
+// map to check if same file
+//reject if any file has higher similarity score than threshold
+
+  function getFileCount()public view returns(uint){
+    return totalFileCount;
+  }
+
+  function getFilesUploadedByUser()public view returns (CodeFile[] memory){
+    uint javaFileCount=userFilesIndexByLanguage[msg.sender][0].length;
+    uint cppFileCount=userFilesIndexByLanguage[msg.sender][1].length;
+    uint javaScriptFileCount=userFilesIndexByLanguage[msg.sender][2].length;
+
+    CodeFile[] memory listOfFiles = new CodeFile[](cppFileCount+javaFileCount+javaScriptFileCount);   
+
+    uint currentCount=0;
+    for(uint i=0;i<javaFileCount;i++){
+      listOfFiles[currentCount]=getFileByIndex(userFilesIndexByLanguage[msg.sender][0][i],0);
+      currentCount++;
+    }
+    for(uint i=0;i<cppFileCount;i++){
+      listOfFiles[currentCount]=getFileByIndex(userFilesIndexByLanguage[msg.sender][1][i],1);
+      currentCount++;
+    }    
+    for(uint i=0;i<javaScriptFileCount;i++){
+      listOfFiles[currentCount]=getFileByIndex(userFilesIndexByLanguage[msg.sender][2][i],2);
+      currentCount++;
+    }
+    return listOfFiles;
+
+  }
+  function uploadFile(uint _fileSize, string memory  _fileIPFSCID, string memory  _fileName,string memory  _fileDescription, string memory  _codeFingerPrint, bytes16 [] memory _hashSet, uint hashSetLength, uint language) public {
+
+    // Returns if same file is uploaded
+    emit CodeSubmitted(block.timestamp,_fileName,language);
+    if(IPFSCIDsMap[_fileIPFSCID]==true){
+      emit PlagiarismResult(true,block.timestamp);
+    }
+    else if(checkIfPlagiarised(_fileName,_hashSet,hashSetLength,language)){
+      emit PlagiarismResult(true,block.timestamp);
+    }
+    else
+    {
+      addPermission(_fileIPFSCID);
+      fileCountByLanguage[language]++;
+      totalFileCount++;
+      IPFSCIDsMap[_fileIPFSCID]=true;
+      filesMapByLanguage[language][fileCountByLanguage[language]] = CodeFile(totalFileCount,_fileSize,_fileIPFSCID, _fileName, _fileDescription,msg.sender,block.timestamp,_codeFingerPrint,_hashSet,hashSetLength,language);
+      userFilesIndexByLanguage[msg.sender][language].push(fileCountByLanguage[language]);
+      emit CodeFileUploadEvent(totalFileCount,_fileSize,_fileIPFSCID, _fileName, _fileDescription,msg.sender,block.timestamp,_codeFingerPrint,_hashSet,hashSetLength,language);
     }
   }
 
-    function getFileByIndex(uint _fileIndex)
+    function getFileByIndex(uint _fileIndex,uint language)
         public
         view
         returns (CodeFile memory records)
     {
-        return filesMap[_fileIndex];
+        return filesMapByLanguage[language][_fileIndex];
     }
 
-    function getFileHashSet(uint _fileIndex) private
+    function getFileHashSet(uint _fileIndex, uint language) private
         view
-        returns (string [] memory )
+        returns (bytes16 [] memory )
     {
-        return filesMap[_fileIndex].hashSet;
+        return filesMapByLanguage[language][_fileIndex].hashSet;
     }
 
-    function checkIfPlagiarised( string [] memory _hashSet)private view returns(bool){
-      uint similarityScore = getMaximumSimilarityScore(_hashSet);
-      
-      uint thresholdSimilarity=0;
-      if(similarityScore>thresholdSimilarity)
-        return true;
-      else
-        return false;
+    function getFileHashSetLength(uint _fileIndex,uint language) private
+        view
+        returns (uint )
+    {
+        return filesMapByLanguage[language][_fileIndex].hashSetLength;
     }
+    function checkIfPlagiarised( string memory  _fileName, bytes16 [] memory _hashSet, uint hashSetLength,uint language)public returns(bool){
 
-    function getMaximumSimilarityScore( string [] memory _hashSet) private view returns (uint){
-      uint maxSimilarity=0;
       uint similarity=0;
-      for(uint i=1;i<=fileCount;i++){
-        string [] memory existingFilehashSet=getFileHashSet(i);
-        for(uint j=1;j<=existingFilehashSet.length;j++){
-          //TODO
-          // uint similarity=getSimilarity();
-          similarity=calculateSimilarityScore(existingFilehashSet,_hashSet);
-          if(similarity>maxSimilarity){
-            maxSimilarity=similarity;
-          }
+
+    emit CheckingPlagiarism(block.timestamp,_fileName,language);
+      for(uint i=1;i<=fileCountByLanguage[language];i++){
+        bytes16 [] memory existingFilehashSet=getFileHashSet(i,language);
+        uint existingFilehashSetLength=getFileHashSetLength(i,language);
+        similarity=calculateSimilarityScore(_hashSet,existingFilehashSet,hashSetLength,existingFilehashSetLength);
+        if(similarity>threshold[language]){
+          return true;
         }
       }
-      return maxSimilarity;
+      
+      return false;
     }
 
-function compareStrings(string memory a, string memory b) public pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-    }
-    function getCommonElementsCount(string[] memory list1, string[] memory list2,uint setLength1,uint setLength2) public pure returns (uint){
+    // function getMaximumSimilarityScore( bytes16 [] memory _hashSet, uint oriHashSetLength,uint language) public view returns (uint){
+    //   uint similarity=0;
+
+    //   for(uint i=1;i<=fileCountByLanguage[language];i++){
+    //     bytes16 [] memory existingFilehashSet=getFileHashSet(i,language);
+    //     uint existingFilehashSetLength=getFileHashSetLength(i,language);
+    //     similarity=calculateSimilarityScore(_hashSet,existingFilehashSet,oriHashSetLength,existingFilehashSetLength);
+    //     if(similarity>threshold){
+    //       break;
+    //     }
+    //   }
+    //   return similarity;
+    // }
+
+ 
+    
+    function getCommonElementsCount(bytes16[] memory list1, bytes16[] memory list2,uint setLength1,uint setLength2) public pure returns (uint){
 
         uint commonElementsCount=0;
         for(uint i=0;i< setLength1;i++){
             for(uint j=0;j<setLength2;j++){
-                if(compareStrings(list1[i],list2[j])){
+                if(list1[i]==list2[j]){
                     commonElementsCount++;
                     break;
                 }
@@ -122,40 +221,11 @@ function compareStrings(string memory a, string memory b) public pure returns (b
         return commonElementsCount;
     }
 
-    function isPresent(string[] memory l1,string memory ele)private pure returns (bool){
-        for(uint i=0;i<l1.length;i++){
-          if(compareStrings(l1[i],ele)){
-            return true;
-          }
-        }
-        return false;
-    }
-    function calculateSimilarityScore(string[] memory l1, string[] memory l2) public pure returns(uint){
+    function calculateSimilarityScore(bytes16[] memory l1, bytes16[] memory l2, uint l1OriLength, uint l2OriLength) public pure returns(uint){
 
-
-      string[] memory list1 = new string[](l1.length);   
-      string[] memory list2 = new string[](l2.length);   
-
-      uint setLength1=0;
-      uint setLength2=0;
-
-        for(uint i=0;i<l1.length;i++){
-            if (!isPresent(list1,l1[i])) {
-              list1[setLength1]=l1[i];
-              setLength1++;
-            }
-        } 
-  
-        for(uint i=0;i<l2.length;i++){
-            if (!isPresent(list2,l2[i])) {
-              list2[setLength2]=l2[i];
-              setLength2++;
-            }
-        } 
-
-        uint commonElementsCount = getCommonElementsCount(list1,list2,setLength1,setLength2);
-        uint unionCount=setLength1+setLength2-commonElementsCount;        
-        
-        return commonElementsCount*100/unionCount;
+      uint commonElementsCount = getCommonElementsCount(l1,l2,l1.length,l2.length);
+      uint unionCount=l1OriLength+l2OriLength-commonElementsCount;        
+      
+      return commonElementsCount*100/unionCount;
     } 
 }

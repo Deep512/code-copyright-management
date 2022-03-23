@@ -9,8 +9,8 @@ var jaccard = Jaccard();
 var hs1, hs2;
 var jaccAns = [];
 
-hs1 = printTree(2, `./data/cpp/${files[10]}`);
-hs2 = printTree(2, `./data/cpp/${files[0]}`);
+hs1 = printTree(1, `./data/cpp/${files[10]}`);
+hs2 = printTree(1, `./data/cpp/${files[0]}`);
 jaccAns.push(jaccard.index(hs1, hs2));
 console.log(jaccAns);
 

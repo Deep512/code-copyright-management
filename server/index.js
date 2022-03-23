@@ -14,7 +14,7 @@ import { getHashSet } from "./hashSet.js";
 import { getNGrams } from "./nGrams.js";
 import { getCodeFingerprint } from "./codeFingerprint.js";
 class Visitor {
-	languageParsers = [Java8Parser, Python3Parser, CPP14Parser, JavaScriptParser];
+	languageParsers = [Java8Parser, CPP14Parser, JavaScriptParser, Python3Parser];
 	constructor(languageIndex) {
 		this.languageIndex = languageIndex;
 		this.listOfRuleNamesIndices = [];
@@ -57,9 +57,9 @@ class Visitor {
 
 const sourceCodeFileNames = [
 	"java_source_code.java",
-	"python_source_code.py",
 	"cpp_source_code.cpp",
 	"js_source_code.js",
+	"python_source_code.py",
 ];
 
 function getJavaParser(chars) {
@@ -103,17 +103,17 @@ function printTree(languageIndex, input) {
 			parser.buildParseTrees = true;
 			tree = parser.classDeclaration();
 			break;
-		case 1:
+		case 3:
 			parser = getPythonParser(chars);
 			parser.buildParseTrees = true;
 			tree = parser.compound_stmt();
 			break;
-		case 2:
+		case 1:
 			parser = getCPPParser(chars);
 			parser.buildParseTrees = true;
 			tree = parser.compoundStatement();
 			break;
-		case 3:
+		case 2:
 			parser = getJavaScriptParser(chars);
 			parser.buildParseTrees = true;
 			tree = parser.program();

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import TestGas from "./contracts/TestGas.json";
+import PlagiarismContract from "./contracts/PlagiarismContract.json";
 import getWeb3 from "./getWeb3";
 import ipfs from "./ipfs";
 import "./App.css";
 import DragDrop from "./components/DragDrop";
+import Particles from "react-tsparticles";
+import Events from "./components/Events";
+import Files from "./components/Files";
+import particlesConfig from "./config/particlesConfig";
 
 function App() {
 	const [lang, setLang] = useState(null);
@@ -16,16 +20,34 @@ function App() {
 	const [buffer, setBuffer] = useState(null);
 	const [ipfsHash, setIpfsHash] = useState("");
 	const [data, setData] = useState("");
+	const [newFile, setNewFile] = useState(0);
+	const [events, setEvents] = useState([]);
+	const [event, setEvent] = useState(null);
+	const [result, setResult] = useState(null);
 	const langIndexes = {
 		java: 0,
-		python: 1,
-		cpp: 2,
-		js: 3,
+		cpp: 1,
+		js: 2,
+	};
+
+	const particlesInit = (main) => {
+		// console.log(main);
+		// you can initialize the tsParticles instance (main) here, adding custom shapes or presets
+	};
+
+	const particlesLoaded = (container) => {
+		// console.log(container);
 	};
 
 	useEffect(() => {
+		if (newFile === 0) return;
+
+		sendToContract();
+	}, [newFile]);
+
+	useEffect(() => {
 		getData();
-	}, [ipfsHash]);
+	}, [result]);
 
 	useEffect(() => {
 		async function fetchData() {
@@ -38,16 +60,16 @@ function App() {
 
 				// Get the contract instance.
 				const networkId = await web3.eth.net.getId();
-				const deployedNetwork = TestGas.networks[networkId];
+				const deployedNetwork = PlagiarismContract.networks[networkId];
 				const instance = new web3.eth.Contract(
-					TestGas.abi,
+					PlagiarismContract.abi,
 					deployedNetwork && deployedNetwork.address
 				);
 
 				// Set web3, accounts, and contract to the state
 				setWeb3(web3);
-				setContract(instance);
 				setAccounts(accounts);
+				setContract(instance);
 			} catch (error) {
 				// Catch any errors for any of the above operations.
 				alert(
@@ -59,10 +81,12 @@ function App() {
 
 		if (!codeFingerprint) {
 			fetchData();
-		} else {
-			sendToContract();
 		}
 	}, [codeFingerprint]);
+
+	useEffect(() => {
+		if (event) setEvents((e) => [...e, event]);
+	}, [event]);
 
 	const setSelectedFile = (selectedFile) => {
 		setFile(selectedFile);
@@ -85,7 +109,8 @@ function App() {
 				len++;
 			}
 		}
-		await contract.methods
+
+		const receipt = await contract.methods
 			.uploadFile(
 				file.size,
 				ipfsHash,
@@ -93,26 +118,42 @@ function App() {
 				"some desc",
 				codeFingerprint,
 				newHashSet,
-				len
+				len,
+				langIndexes[lang]
 			)
 			.send({ from: accounts[0] });
-		let fc = await contract.methods.fileCount().call();
-		console.log(fc);
+
+		setEvent(receipt.events.CodeSubmitted);
+		console.log(receipt.events.CodeSubmitted);
+		if (receipt.events.CheckingPlagiarism) {
+			setEvent(receipt.events.CheckingPlagiarism);
+			console.log(receipt.events.CheckingPlagiarism);
+		} else {
+			setResult("ipfs");
+		}
+
+		if (receipt.events.PlagiarismResult) {
+			setEvent(receipt.events.PlagiarismResult);
+			console.log(receipt.events.PlagiarismResult);
+			console.log("File is plagiarized");
+			setResult("plagiarised");
+		}
+		if (receipt.events.CodeFileUploadEvent) {
+			setEvent(receipt.events.CodeFileUploadEvent);
+			console.log(receipt.events.CodeFileUploadEvent);
+			console.log("File is original");
+			setResult("original");
+		}
+
+		const receipt2 = await contract.methods
+			.doesUserHavePermission(ipfsHash, accounts[0])
+			.call();
+		console.log(receipt2);
 	};
 
 	var onLangChange = (e) => {
 		setLang(e.target.value);
 	};
-
-	// var onFileChange = async (e) => {
-	// 	setFile(e.target.files[0]);
-	// 	const reader = new FileReader();
-	// 	reader.readAsArrayBuffer(e.target.files[0]);
-	// 	reader.onloadend = () => {
-	// 		setBuffer(Buffer(reader.result));
-	// 		console.log("buffer", reader.result);
-	// 	};
-	// };
 
 	var onSubmit = async (e) => {
 		e.preventDefault();
@@ -141,16 +182,16 @@ function App() {
 					.then((data) => {
 						setHashSet(data["hashSet"]);
 						setCodeFingerprint(data["codeFingerprint"]);
+						setNewFile(newFile === 1 ? 2 : 1);
 					});
 			};
 			reader.readAsText(file);
-			console.log("SUBMITTED");
 		});
 	};
 
 	const getData = async () => {
 		if (ipfsHash !== "") {
-			const stream = ipfs.cat(ipfsHash);
+			const stream = ipfs.cat(ipfsHash, accounts[0]);
 			let data = "";
 
 			for await (const chunk of stream) {
@@ -164,28 +205,117 @@ function App() {
 
 	return web3 ? (
 		<div className="App">
-			<header style={{ fontWeight: "bold", fontSize: "large" }}>
-				Code Copyright Management and Code Plagiarism Detection
+			<div>
+				<Particles
+					id="tsparticles"
+					init={particlesInit}
+					loaded={particlesLoaded}
+					options={particlesConfig}
+				/>
+			</div>
+			<header
+				style={{
+					paddingTop: "10px",
+					fontWeight: "bold",
+					fontSize: "large",
+					color: "white",
+					position: "relative",
+				}}
+			>
+				Code Plagiarism Detection and Copyright Management System
 			</header>
+
 			<br />
-			<DragDrop setSelectedFile={setSelectedFile} />
-			<br />
-			<label htmlFor="language" style={{ fontWeight: "bold" }}>
-				Select the language:{" "}
-			</label>
-			<select name="language" id="language" onChange={(e) => onLangChange(e)}>
-				<option value="Select">Select</option>
-				<option value="js">Javascript</option>
-				<option value="cpp">C++</option>
-				<option value="java">JAVA</option>
-				<option value="python">Python</option>
-			</select>
-			<br />
-			<br />
-			<button type="submit" onClick={onSubmit}>
-				Submit
-			</button>
-			<p>{data}</p>
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "row",
+						justifyContent: "center",
+						marginBottom: "20px",
+						marginTop: "10px",
+					}}
+				>
+					<div
+						style={{
+							marginLeft: "45px",
+							marginRight: "25px",
+							border: "2px solid black",
+							// borderRadius: "20px",
+							height: "250px",
+							paddingTop: "75px",
+							position: "relative",
+							// zIndex: "1",
+							backgroundColor: "#09d3ac",
+							width: "580px",
+						}}
+					>
+						<DragDrop setSelectedFile={setSelectedFile} />
+						<br />
+						<label htmlFor="language" style={{ fontWeight: "bold" }}>
+							Select the language:{" "}
+						</label>
+						<select
+							name="language"
+							id="language"
+							onChange={(e) => onLangChange(e)}
+						>
+							<option value="Select">Select</option>
+							<option value="js">Javascript</option>
+							<option value="cpp">C++</option>
+							<option value="java">JAVA</option>
+							{/* <option value="python">Python</option> */}
+						</select>
+						<br />
+						<br />
+						<button
+							type="submit"
+							style={{ color: "white", backgroundColor: "#007AA6" }}
+							onClick={onSubmit}
+						>
+							Submit
+						</button>
+						{/* <p>{data}</p> */}
+					</div>
+					<div
+						style={{
+							// borderRadius: "20px",
+							marginRight: "45px",
+							border: "2px solid black",
+							// paddingTop: "75px",
+							width: "555px",
+							position: "relative",
+							backgroundColor: "#222336",
+							overflowY: "scroll",
+							height: "325px",
+						}}
+					>
+						<Files contract={contract} event={event} accounts={accounts} />
+					</div>
+				</div>
+				<div
+					style={{
+						textAlign: "left",
+						border: "2px solid black",
+						marginLeft: "175px",
+						marginRight: "175px",
+						marginBottom: "12px",
+						color: "#A2A3B0",
+						position: "relative",
+						backgroundColor: "#222336",
+						height: "290px",
+						overflowY: "scroll",
+						fontFamily: "Consolas",
+					}}
+				>
+					<Events contract={contract} logs={events} />
+				</div>
+			</div>
 		</div>
 	) : (
 		<div>Loading Web3, accounts, and contract...</div>

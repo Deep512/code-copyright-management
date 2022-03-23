@@ -1,5 +1,10 @@
 .App {
 	text-align: center;
+	background-color: #003049;
+	/* z-index: -1; */
+	color: white;
+	position: relative;
+	overflow: hidden;
 }
 
 .App-logo {
@@ -7,7 +12,7 @@
 }
 
 .App-header {
-	background-color: #282c34;
+	background-color: #09d3ac;
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;

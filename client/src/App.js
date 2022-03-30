@@ -4,10 +4,9 @@ import getWeb3 from "./getWeb3";
 import ipfs from "./ipfs";
 import "./App.css";
 import DragDrop from "./components/DragDrop";
-import Particles from "react-tsparticles";
 import Events from "./components/Events";
 import Files from "./components/Files";
-import particlesConfig from "./config/particlesConfig";
+import PlagiarismReport from "./components/PlagiarismReport";
 
 function App() {
 	const [lang, setLang] = useState(null);
@@ -24,19 +23,11 @@ function App() {
 	const [events, setEvents] = useState([]);
 	const [event, setEvent] = useState(null);
 	const [result, setResult] = useState(null);
+	const [plagiarismReport, setPlagiarismReport] = useState([]);
 	const langIndexes = {
 		java: 0,
 		cpp: 1,
 		js: 2,
-	};
-
-	const particlesInit = (main) => {
-		// console.log(main);
-		// you can initialize the tsParticles instance (main) here, adding custom shapes or presets
-	};
-
-	const particlesLoaded = (container) => {
-		// console.log(container);
 	};
 
 	useEffect(() => {
@@ -109,46 +100,49 @@ function App() {
 				len++;
 			}
 		}
-
-		const receipt = await contract.methods
-			.uploadFile(
-				file.size,
-				ipfsHash,
-				file.name,
-				"some desc",
-				codeFingerprint,
-				newHashSet,
-				len,
-				langIndexes[lang]
-			)
-			.send({ from: accounts[0] });
-
-		setEvent(receipt.events.CodeSubmitted);
-		console.log(receipt.events.CodeSubmitted);
-		if (receipt.events.CheckingPlagiarism) {
-			setEvent(receipt.events.CheckingPlagiarism);
-			console.log(receipt.events.CheckingPlagiarism);
+		setPlagiarismReport([]);
+		const receipt1 = await contract.methods.fileInIPFS(ipfsHash).call();
+		if (receipt1) {
+			alert("File has already been submitted to the blockchain!");
 		} else {
-			setResult("ipfs");
+			const receipt = await contract.methods
+				.uploadFile(
+					file.size,
+					ipfsHash,
+					file.name,
+					"some desc",
+					codeFingerprint,
+					newHashSet,
+					len,
+					langIndexes[lang]
+				)
+				.send({ from: accounts[0] });
+
+			setEvent(receipt.events.CodeSubmitted);
+			setEvent(receipt.events.CheckingPlagiarism);
+			if (receipt.events.PlagiarismReport) {
+				if (receipt.events.PlagiarismReport.length)
+					setPlagiarismReport(receipt.events.PlagiarismReport);
+				else setPlagiarismReport([receipt.events.PlagiarismReport]);
+			}
+			if (receipt.events.PlagiarismResult) {
+				setEvent(receipt.events.PlagiarismResult);
+				alert(
+					"File is plagiarized!!! Plagiarism Report is given at the bottom of the page"
+				);
+			}
+			if (receipt.events.CodeFileUploadEvent) {
+				setEvent(receipt.events.CodeFileUploadEvent);
+				alert(
+					"File is Original and has been successfully uploaded on the blockchain"
+				);
+			}
 		}
 
-		if (receipt.events.PlagiarismResult) {
-			setEvent(receipt.events.PlagiarismResult);
-			console.log(receipt.events.PlagiarismResult);
-			console.log("File is plagiarized");
-			setResult("plagiarised");
-		}
-		if (receipt.events.CodeFileUploadEvent) {
-			setEvent(receipt.events.CodeFileUploadEvent);
-			console.log(receipt.events.CodeFileUploadEvent);
-			console.log("File is original");
-			setResult("original");
-		}
-
-		const receipt2 = await contract.methods
-			.doesUserHavePermission(ipfsHash, accounts[0])
-			.call();
-		console.log(receipt2);
+		// const receipt2 = await contract.methods
+		// 	.doesUserHavePermission(ipfsHash, accounts[0])
+		// 	.call();
+		// console.log(receipt2);
 	};
 
 	var onLangChange = (e) => {
@@ -158,12 +152,23 @@ function App() {
 	var onSubmit = async (e) => {
 		e.preventDefault();
 		if (!file || !lang || lang === "Select") {
-			console.log("Please choose a language and upload the file properly");
+			alert("Please choose a language and upload the file properly");
+			return;
+		}
+		if (file.name.charAt(file.name.length - 1) === "s" && lang !== "js") {
+			alert("File type and language must be same");
+			return;
+		}
+		if (file.name.charAt(file.name.length - 1) === "a" && lang !== "java") {
+			alert("File type and language must be same");
+			return;
+		}
+		if (file.name.charAt(file.name.length - 1) === "p" && lang !== "cpp") {
+			alert("File type and language must be same");
 			return;
 		}
 		ipfs.add(buffer).then((res) => {
 			setIpfsHash(res["path"]);
-			console.log("IPFS Hash", res["path"]);
 			const reader = new FileReader();
 			reader.onload = async (e) => {
 				let text = e.target.result;
@@ -205,14 +210,6 @@ function App() {
 
 	return web3 ? (
 		<div className="App">
-			<div>
-				<Particles
-					id="tsparticles"
-					init={particlesInit}
-					loaded={particlesLoaded}
-					options={particlesConfig}
-				/>
-			</div>
 			<header
 				style={{
 					paddingTop: "10px",
@@ -315,6 +312,19 @@ function App() {
 				>
 					<Events contract={contract} logs={events} />
 				</div>
+				{plagiarismReport.length === 0 ? null : (
+					<div
+						style={{
+							// paddingTop: "75px",
+							alignItems: "center",
+							marginLeft: "250px",
+							marginRight: "250px",
+							position: "relative",
+						}}
+					>
+						<PlagiarismReport reports={plagiarismReport} />
+					</div>
+				)}{" "}
 			</div>
 		</div>
 	) : (

@@ -31,7 +31,7 @@ languages
 
 
   //TODO: Use actual threshold
-  uint[] public threshold=[30,30,30];
+  uint[] public threshold=[30,37,30];
 
 
   mapping(uint=>mapping(uint=>CodeFile)) public filesMapByLanguage;
@@ -60,6 +60,13 @@ languages
     uint hashSetLength,
     uint language
   ) ;
+
+  event PlagiarismReport(
+    string fileName,
+    uint similarity,
+    string fileIPFSCID
+    );
+
 
   event GetFilesEvent(
     CodeFile[] codefiles
@@ -131,14 +138,16 @@ languages
     return listOfFiles;
 
   }
+
+  function fileInIPFS(string memory _fileIPFSCID) public view returns(bool){
+      return IPFSCIDsMap[_fileIPFSCID];
+  }
+
   function uploadFile(uint _fileSize, string memory  _fileIPFSCID, string memory  _fileName,string memory  _fileDescription, string memory  _codeFingerPrint, bytes16 [] memory _hashSet, uint hashSetLength, uint language) public {
 
     // Returns if same file is uploaded
     emit CodeSubmitted(block.timestamp,_fileName,language);
-    if(IPFSCIDsMap[_fileIPFSCID]==true){
-      emit PlagiarismResult(true,block.timestamp);
-    }
-    else if(checkIfPlagiarised(_fileName,_hashSet,hashSetLength,language)){
+    if(checkIfPlagiarised(_fileName,_hashSet,hashSetLength,language)){
       emit PlagiarismResult(true,block.timestamp);
     }
     else
@@ -177,16 +186,22 @@ languages
     function checkIfPlagiarised( string memory  _fileName, bytes16 [] memory _hashSet, uint hashSetLength,uint language)public returns(bool){
 
       uint similarity=0;
-
+      uint flag=0;
     emit CheckingPlagiarism(block.timestamp,_fileName,language);
       for(uint i=1;i<=fileCountByLanguage[language];i++){
         bytes16 [] memory existingFilehashSet=getFileHashSet(i,language);
         uint existingFilehashSetLength=getFileHashSetLength(i,language);
         similarity=calculateSimilarityScore(_hashSet,existingFilehashSet,hashSetLength,existingFilehashSetLength);
         if(similarity>threshold[language]){
-          return true;
+          CodeFile memory file=getFileByIndex(i, language);
+          emit PlagiarismReport(file.fileName,similarity,file.fileIPFSCID);
+          flag=1;
         }
       }
+        if(flag==1){
+          return true;
+        }
+
       
       return false;
     }
